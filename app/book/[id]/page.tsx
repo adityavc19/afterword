@@ -54,8 +54,8 @@ export default async function BookPage({ params }: Props) {
       {/* Two-column layout */}
       <div className="flex-1 flex" style={{ maxWidth: 1120, margin: '0 auto', padding: '0 24px', width: '100%' }}>
 
-        {/* Left column: Book metadata + landscape */}
-        <div style={{ width: 340, flexShrink: 0, padding: '32px 24px 32px 0', borderRight: '1px solid #EDE6DB', overflowY: 'auto' }}>
+        {/* Left column: Book metadata only */}
+        <div style={{ width: 300, flexShrink: 0, padding: '32px 24px 32px 0', borderRight: '1px solid #EDE6DB' }}>
           {/* Cover */}
           <div style={{ marginBottom: 20 }}>
             {metadata.cover ? (
@@ -144,31 +144,30 @@ export default async function BookPage({ params }: Props) {
 
           {/* Ratings count */}
           {metadata.ratingsCount && (
-            <div style={{ fontSize: 11, color: '#B0A08A', marginBottom: 24 }}>
+            <div style={{ fontSize: 11, color: '#B0A08A', marginBottom: 20 }}>
               {metadata.ratingsCount.toLocaleString()} ratings
             </div>
           )}
 
-          {/* How This Book Is Read */}
-          <InterpretiveLandscape landscape={interpretiveLandscape} />
-
           {/* Sources */}
-          <div style={{ padding: '16px 0' }}>
+          <div style={{ borderTop: '1px solid #EDE6DB', paddingTop: 14 }}>
             <SourceBadges sources={sources} variant="bar" />
           </div>
         </div>
 
-        {/* Right column: Chat */}
-        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0 }}>
-          <div style={{ flex: 1, padding: '0 0 0 24px', display: 'flex', flexDirection: 'column' }}>
-            <ChatWindow
-              bookId={id}
-              bookSources={sources}
-              bookTitle={metadata.title}
-              questionPrompts={questionPrompts ?? []}
-              chunkCount={chunkCount ?? 0}
-            />
-          </div>
+        {/* Right column: Landscape + Chat */}
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0, padding: '0 0 0 24px' }}>
+          {/* How This Book Is Read */}
+          <InterpretiveLandscape landscape={interpretiveLandscape} />
+
+          {/* Chat */}
+          <ChatWindow
+            bookId={id}
+            bookSources={sources}
+            bookTitle={metadata.title}
+            questionPrompts={questionPrompts ?? []}
+            chunkCount={chunkCount ?? 0}
+          />
         </div>
       </div>
     </div>
