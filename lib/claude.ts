@@ -122,12 +122,12 @@ Based on the following source excerpts:
    - READERS: What is the dominant reader sentiment in one line?
    - THE DEBATE: What is the single biggest point of disagreement?
 
-2. Generate exactly 5 SHORT discussion questions (max 15 words each). These are displayed as clickable buttons in a UI — they must be brief. Examples of good length: "Why don't the students ever try to escape?", "Is Kathy a reliable narrator or in deep denial?", "What's the significance of the Judy Bridgewater tape?". Be specific to THIS book.
+2. Generate exactly 4 SHORT discussion questions (max 15 words each). These are displayed as clickable buttons in a UI — they must be brief. Examples of good length: "Why don't the students ever try to escape?", "Is Kathy a reliable narrator or in deep denial?". Be specific to THIS book.
 
 Be specific and grounded in the sources. Keep the three summaries SHORT — they are displayed as UI cards, not paragraphs.
 
 Return ONLY a JSON object in this format (no markdown, no backticks):
-{"criticConsensus": "...", "readerSentiment": "...", "theDebate": "...", "questionPrompts": ["...", "...", "...", "...", "..."]}
+{"criticConsensus": "...", "readerSentiment": "...", "theDebate": "...", "questionPrompts": ["...", "...", "...", "..."]}
 
 Source excerpts:
 ${sampleChunks}`;

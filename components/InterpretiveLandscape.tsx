@@ -50,11 +50,9 @@ export default function InterpretiveLandscape({ landscape }: Props) {
   return (
     <div
       style={{
-        padding: 24,
-        margin: '0 -24px',
-        background: '#F5F0E8',
+        padding: '20px 0',
+        background: 'transparent',
         borderTop: '1px solid #E8DFD0',
-        borderBottom: '1px solid #E8DFD0',
       }}
     >
       <h2
