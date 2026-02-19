@@ -3,7 +3,7 @@ import { scrapeGoodreads } from './scrapers/goodreads';
 import { scrapeReddit } from './scrapers/reddit';
 import { scrapeGuardian } from './scrapers/guardian';
 import { scrapeLitHub } from './scrapers/lithub';
-import { generateLandscape } from './claude';
+import { generateLandscapeAndPrompts } from './claude';
 import { setKnowledge } from './store';
 
 export async function ingestBook(
@@ -70,13 +70,15 @@ export async function ingestBook(
 
   onProgress({ step: 'Building knowledge base', status: 'loading' });
 
-  // Generate interpretive landscape
-  const interpretiveLandscape = await generateLandscape(metadata, allChunks);
+  // Generate interpretive landscape + question prompts
+  const { landscape: interpretiveLandscape, questionPrompts } = await generateLandscapeAndPrompts(metadata, allChunks);
 
   const knowledge: BookKnowledge = {
     metadata,
     chunks: allChunks,
     interpretiveLandscape,
+    questionPrompts,
+    chunkCount: allChunks.length,
     ingestedAt: Date.now(),
     sources: successfulSources,
   };

@@ -5,7 +5,11 @@ import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { SearchResult, BookMetadata } from '@/types';
 
-export default function SearchBar() {
+interface Props {
+  variant?: 'home' | 'detail';
+}
+
+export default function SearchBar({ variant = 'home' }: Props) {
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<SearchResult[]>([]);
   const [loading, setLoading] = useState(false);
@@ -41,7 +45,6 @@ export default function SearchBar() {
     };
   }, [query]);
 
-  // Close dropdown when clicking outside
   useEffect(() => {
     function handleClick(e: MouseEvent) {
       if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
@@ -54,8 +57,7 @@ export default function SearchBar() {
 
   function selectBook(result: SearchResult) {
     setOpen(false);
-    setQuery(result.title);
-    // Pass metadata via URL so the loading screen can start immediately
+    setQuery('');
     const metadata: Partial<BookMetadata> = {
       id: result.id,
       title: result.title,
@@ -69,54 +71,103 @@ export default function SearchBar() {
     router.push(`/loading/${result.id}?metadata=${encodeURIComponent(JSON.stringify(metadata))}`);
   }
 
+  const isHome = variant === 'home';
+
   return (
-    <div ref={containerRef} className="relative w-full max-w-2xl mx-auto">
-      <div className="relative">
+    <div ref={containerRef} className={`relative ${isHome ? 'w-full max-w-[520px] mx-auto' : 'flex-1 max-w-[360px]'}`}>
+      <div
+        className="flex items-center transition-all"
+        style={{
+          background: isHome ? '#FFFFFF' : '#F5F0E8',
+          border: `1px solid ${open && results.length > 0 ? '#C4B49A' : (isHome ? '#E0D6CA' : '#E8DFD0')}`,
+          borderRadius: open && results.length > 0 ? '12px 12px 0 0' : '12px',
+          padding: isHome ? '16px 20px' : '8px 12px',
+          boxShadow: isHome ? '0 2px 12px rgba(139, 115, 85, 0.06)' : 'none',
+        }}
+      >
+        <svg
+          width={isHome ? 20 : 14}
+          height={isHome ? 20 : 14}
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke={isHome ? '#8B7355' : '#B0A08A'}
+          strokeWidth="2"
+          strokeLinecap="round"
+          style={{ marginRight: isHome ? 12 : 8, flexShrink: 0 }}
+        >
+          <circle cx="11" cy="11" r="8" />
+          <line x1="21" y1="21" x2="16.65" y2="16.65" />
+        </svg>
         <input
           type="text"
           value={query}
           onChange={e => setQuery(e.target.value)}
-          placeholder="Search for a book or author..."
-          className="w-full bg-stone-900 border border-stone-700 rounded-xl px-5 py-4 text-lg text-stone-100 placeholder-stone-500 focus:outline-none focus:border-stone-400 focus:bg-stone-800 transition-colors"
-          autoFocus
+          onFocus={() => { if (results.length > 0) setOpen(true); }}
+          placeholder={isHome ? 'Search by title or author...' : 'Search another book...'}
+          className="flex-1 border-none bg-transparent"
+          style={{
+            fontSize: isHome ? 16 : 13,
+            fontFamily: "var(--font-dm-sans), sans-serif",
+            color: '#1A1A1A',
+            letterSpacing: '-0.01em',
+          }}
+          autoFocus={isHome}
         />
         {loading && (
-          <div className="absolute right-4 top-1/2 -translate-y-1/2">
-            <div className="w-4 h-4 border-2 border-stone-500 border-t-stone-300 rounded-full animate-spin" />
-          </div>
+          <div
+            className="rounded-full animate-spin"
+            style={{
+              width: isHome ? 16 : 12,
+              height: isHome ? 16 : 12,
+              border: '2px solid #E0D6CA',
+              borderTopColor: '#8B7355',
+            }}
+          />
         )}
       </div>
 
       {open && results.length > 0 && (
-        <div className="absolute top-full mt-2 w-full bg-stone-900 border border-stone-700 rounded-xl overflow-hidden shadow-2xl z-50">
+        <div
+          className="absolute top-full left-0 right-0 overflow-hidden z-50"
+          style={{
+            background: '#FFFFFF',
+            border: '1px solid #C4B49A',
+            borderTop: '1px solid #EDE6DB',
+            borderBottomLeftRadius: 12,
+            borderBottomRightRadius: 12,
+            boxShadow: '0 8px 24px rgba(139, 115, 85, 0.1)',
+          }}
+        >
           {results.map((result, i) => (
             <button
               key={`${result.id}-${i}`}
               onClick={() => selectBook(result)}
-              className="w-full flex items-center gap-4 px-4 py-3 hover:bg-stone-800 transition-colors text-left group"
+              className="w-full flex items-center justify-between text-left transition-colors"
+              style={{ padding: isHome ? '14px 20px' : '10px 14px' }}
+              onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = '#F5EDE4'; }}
+              onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'transparent'; }}
             >
-              <div className="flex-shrink-0 w-10 h-14 bg-stone-800 rounded overflow-hidden">
-                {result.cover ? (
-                  <Image
-                    src={result.cover}
-                    alt={result.title}
-                    width={40}
-                    height={56}
-                    className="w-full h-full object-cover"
-                    unoptimized
-                  />
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center text-stone-600 text-xs">📖</div>
+              <div className="flex items-center gap-3 min-w-0">
+                {isHome && result.cover && (
+                  <div className="flex-shrink-0 w-8 h-11 rounded overflow-hidden" style={{ background: '#F5F0E8' }}>
+                    <Image
+                      src={result.cover}
+                      alt={result.title}
+                      width={32}
+                      height={44}
+                      className="w-full h-full object-cover"
+                      unoptimized
+                    />
+                  </div>
                 )}
+                <div className="min-w-0">
+                  <span style={{ fontWeight: 500, fontSize: isHome ? 15 : 13 }}>{result.title}</span>
+                  <span style={{ color: '#8B7355', fontSize: isHome ? 14 : 12, marginLeft: 8 }}>{result.author}</span>
+                </div>
               </div>
-              <div className="min-w-0">
-                <p className="text-stone-100 font-medium truncate group-hover:text-white">
-                  {result.title}
-                </p>
-                <p className="text-stone-400 text-sm truncate">
-                  {result.author}{result.year ? ` · ${result.year}` : ''}
-                </p>
-              </div>
+              <span style={{ color: '#B0A08A', fontSize: isHome ? 13 : 12, flexShrink: 0 }}>
+                {result.year > 0 ? result.year : ''}
+              </span>
             </button>
           ))}
         </div>

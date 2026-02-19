@@ -93,15 +93,18 @@ export async function streamChat(
   });
 }
 
-export async function generateLandscape(
+export async function generateLandscapeAndPrompts(
   metadata: BookMetadata,
   chunks: Chunk[]
-): Promise<InterpretiveLandscape> {
+): Promise<{ landscape: InterpretiveLandscape; questionPrompts: string[] }> {
   if (chunks.length === 0) {
     return {
-      criticConsensus: 'Limited critical coverage found.',
-      readerSentiment: 'Reader responses vary widely.',
-      theDebate: 'No strong consensus found in online discussion.',
+      landscape: {
+        criticConsensus: 'Limited critical coverage found.',
+        readerSentiment: 'Reader responses vary widely.',
+        theDebate: 'No strong consensus found in online discussion.',
+      },
+      questionPrompts: [],
     };
   }
 
@@ -112,16 +115,19 @@ export async function generateLandscape(
 
   const prompt = `You are analyzing reader and critic responses to "${metadata.title}" by ${metadata.author}.
 
-Based on the following source excerpts, write exactly THREE short paragraphs (2-3 sentences each):
+Based on the following source excerpts:
 
-1. CRITICS: What is the critical consensus? What do literary reviewers praise or fault?
-2. READERS: What is the general reader sentiment? How do most readers emotionally respond?
-3. THE DEBATE: Where do readers and critics genuinely diverge? What aspects of the book are contested?
+1. Write THREE very concise summaries (STRICTLY 1-2 sentences each, max 50 words each):
+   - CRITICS: What is the critical consensus in one line?
+   - READERS: What is the dominant reader sentiment in one line?
+   - THE DEBATE: What is the single biggest point of disagreement?
 
-Be specific and grounded in what the sources actually say. If information is thin, be honest.
+2. Generate exactly 5 specific, thought-provoking discussion questions about this book that a reader who just finished it would want to explore. Be specific to THIS book, not generic.
+
+Be specific and grounded in the sources. Keep the three summaries SHORT — they are displayed as UI cards, not paragraphs.
 
 Return ONLY a JSON object in this format (no markdown, no backticks):
-{"criticConsensus": "...", "readerSentiment": "...", "theDebate": "..."}
+{"criticConsensus": "...", "readerSentiment": "...", "theDebate": "...", "questionPrompts": ["...", "...", "...", "...", "..."]}
 
 Source excerpts:
 ${sampleChunks}`;
@@ -129,19 +135,30 @@ ${sampleChunks}`;
   try {
     const response = await client.messages.create({
       model: 'claude-sonnet-4-6',
-      max_tokens: 512,
+      max_tokens: 800,
       messages: [{ role: 'user', content: prompt }],
     });
 
     const text = response.content[0].type === 'text' ? response.content[0].text.trim() : '';
     const jsonText = text.replace(/^```json?\s*/i, '').replace(/\s*```$/, '');
-    return JSON.parse(jsonText) as InterpretiveLandscape;
+    const parsed = JSON.parse(jsonText);
+    return {
+      landscape: {
+        criticConsensus: parsed.criticConsensus,
+        readerSentiment: parsed.readerSentiment,
+        theDebate: parsed.theDebate,
+      },
+      questionPrompts: parsed.questionPrompts ?? [],
+    };
   } catch (err) {
     console.log('[Claude] landscape generation failed:', err);
     return {
-      criticConsensus: 'Critical perspectives vary across sources.',
-      readerSentiment: 'Reader responses are divided.',
-      theDebate: 'Multiple interpretations coexist in the discourse around this book.',
+      landscape: {
+        criticConsensus: 'Critical perspectives vary across sources.',
+        readerSentiment: 'Reader responses are divided.',
+        theDebate: 'Multiple interpretations coexist in the discourse around this book.',
+      },
+      questionPrompts: [],
     };
   }
 }

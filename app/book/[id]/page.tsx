@@ -1,8 +1,10 @@
-import { notFound, redirect } from 'next/navigation';
+import { redirect } from 'next/navigation';
 import Image from 'next/image';
 import Link from 'next/link';
 import { getKnowledge } from '@/lib/store';
+import SearchBar from '@/components/SearchBar';
 import InterpretiveLandscape from '@/components/InterpretiveLandscape';
+import SourceBadges from '@/components/SourceBadges';
 import ChatWindow from '@/components/ChatWindow';
 
 interface Props {
@@ -14,102 +16,167 @@ export default async function BookPage({ params }: Props) {
   const knowledge = getKnowledge(id);
 
   if (!knowledge) {
-    // Book not ingested — redirect back to home
     redirect('/');
   }
 
-  const { metadata, interpretiveLandscape, sources } = knowledge;
+  const { metadata, interpretiveLandscape, sources, questionPrompts, chunkCount } = knowledge;
+  const authorLastName = metadata.author.split(' ').pop()?.toUpperCase() ?? '';
 
   return (
-    <div className="min-h-screen">
-      {/* Top nav */}
-      <nav className="border-b border-stone-800 px-6 py-4 flex items-center justify-between">
-        <Link href="/" className="text-stone-400 hover:text-stone-200 transition-colors text-sm">
-          ← Afterword
+    <div className="min-h-screen flex flex-col animate-fade-up" style={{ background: '#FDFAF6' }}>
+      {/* Top bar — full width */}
+      <div
+        className="flex items-center gap-4 sticky top-0 z-10"
+        style={{
+          padding: '12px 24px',
+          borderBottom: '1px solid #EDE6DB',
+          background: '#FDFAF6',
+        }}
+      >
+        <Link
+          href="/"
+          className="transition-opacity hover:opacity-70"
+          style={{
+            fontFamily: 'var(--font-instrument-serif), serif',
+            fontSize: 15,
+            letterSpacing: '0.1em',
+            color: '#8B7355',
+            textTransform: 'uppercase',
+            textDecoration: 'none',
+            whiteSpace: 'nowrap',
+          }}
+        >
+          Afterword
         </Link>
-      </nav>
+        <SearchBar variant="detail" />
+      </div>
 
-      <div className="max-w-6xl mx-auto px-4 md:px-6 py-8">
-        <div className="grid grid-cols-1 lg:grid-cols-[320px_1fr] gap-8">
-          {/* Left column: Book info + landscape */}
-          <div className="space-y-6">
-            {/* Book header */}
-            <div className="flex gap-4">
-              <div className="flex-shrink-0 w-24 h-36 bg-stone-800 rounded-lg overflow-hidden shadow-xl">
-                {metadata.cover ? (
-                  <Image
-                    src={metadata.cover}
-                    alt={metadata.title}
-                    width={96}
-                    height={144}
-                    className="w-full h-full object-cover"
-                    unoptimized
-                  />
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center text-stone-600 text-3xl">📖</div>
-                )}
-              </div>
-              <div className="min-w-0">
-                <h1 className="text-xl font-semibold text-stone-100 leading-snug">{metadata.title}</h1>
-                <p className="text-stone-400 mt-1">{metadata.author}</p>
-                {metadata.year > 0 && (
-                  <p className="text-stone-600 text-sm mt-0.5">{metadata.year}</p>
-                )}
-                <div className="flex items-center gap-3 mt-2 flex-wrap">
-                  {metadata.goodreadsRating && (
-                    <span className="text-sm text-amber-400">
-                      ★ {metadata.goodreadsRating}
-                      {metadata.ratingsCount && (
-                        <span className="text-stone-600 text-xs ml-1">
-                          ({metadata.ratingsCount.toLocaleString()} ratings)
-                        </span>
-                      )}
-                    </span>
-                  )}
-                  {metadata.pageCount > 0 && (
-                    <span className="text-stone-600 text-xs">{metadata.pageCount} pages</span>
-                  )}
+      {/* Main content — single column */}
+      <div className="flex-1 flex flex-col w-full" style={{ maxWidth: 720, margin: '0 auto', padding: '0 24px' }}>
+
+        {/* Book metadata */}
+        <div style={{ padding: '32px 0 28px' }}>
+          <div style={{ display: 'flex', gap: 24 }}>
+            {/* Cover */}
+            <div className="flex-shrink-0" style={{ width: 110 }}>
+              {metadata.cover ? (
+                <div
+                  className="overflow-hidden"
+                  style={{
+                    width: 110,
+                    height: 165,
+                    borderRadius: 4,
+                    border: '1px solid #E0D6CA',
+                    boxShadow: '0 4px 16px rgba(0,0,0,0.08)',
+                  }}
+                >
+                  <Image src={metadata.cover} alt={metadata.title} width={110} height={165} className="w-full h-full object-cover" unoptimized />
                 </div>
-              </div>
+              ) : (
+                <div
+                  className="flex flex-col items-center justify-center"
+                  style={{
+                    width: 110,
+                    height: 165,
+                    borderRadius: 4,
+                    background: 'linear-gradient(145deg, #3D3428 0%, #2A2318 100%)',
+                    border: '1px solid #E0D6CA',
+                    padding: 14,
+                    boxShadow: '0 4px 16px rgba(0,0,0,0.08)',
+                  }}
+                >
+                  <div style={{ fontFamily: 'var(--font-instrument-serif), serif', fontSize: 13, textAlign: 'center', lineHeight: 1.3, color: '#E8D5C4' }}>
+                    {metadata.title}
+                  </div>
+                  <div style={{ fontSize: 9, color: '#8B7355', marginTop: 8, letterSpacing: '0.05em' }}>
+                    {authorLastName}
+                  </div>
+                </div>
+              )}
             </div>
 
-            {/* Synopsis */}
-            {metadata.synopsis && (
-              <details className="group">
-                <summary className="text-stone-500 text-sm cursor-pointer hover:text-stone-300 transition-colors list-none flex items-center gap-1">
-                  <span className="group-open:hidden">+ Synopsis</span>
-                  <span className="hidden group-open:block">− Synopsis</span>
-                </summary>
-                <p className="mt-3 text-stone-400 text-sm leading-relaxed">
-                  {metadata.synopsis.slice(0, 500)}
-                  {metadata.synopsis.length > 500 ? '...' : ''}
-                </p>
-              </details>
-            )}
-
-            {/* Genre tags */}
-            {metadata.genre.length > 0 && (
-              <div className="flex flex-wrap gap-2">
-                {metadata.genre.slice(0, 4).map(g => (
-                  <span
-                    key={g}
-                    className="text-xs px-2 py-0.5 bg-stone-800 text-stone-500 rounded-full border border-stone-700"
-                  >
-                    {g}
+            {/* Details */}
+            <div style={{ flex: 1 }}>
+              {/* Title + Year */}
+              <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, marginBottom: 8 }}>
+                <h1 style={{ fontFamily: 'var(--font-instrument-serif), serif', fontSize: 28, fontWeight: 400, lineHeight: 1.2 }}>
+                  {metadata.title}
+                </h1>
+                {metadata.year > 0 && (
+                  <span style={{ fontSize: 14, color: '#B0A08A', fontFamily: 'var(--font-jetbrains-mono), monospace', flexShrink: 0 }}>
+                    {metadata.year}
                   </span>
-                ))}
+                )}
               </div>
-            )}
 
-            {/* Interpretive landscape */}
-            <InterpretiveLandscape landscape={interpretiveLandscape} />
-          </div>
+              {/* Author */}
+              <div style={{ fontSize: 15, color: '#6B5D4D', marginBottom: 12, display: 'flex', alignItems: 'center', gap: 8 }}>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#B0A08A" strokeWidth="2" strokeLinecap="round">
+                  <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                  <circle cx="12" cy="7" r="4" />
+                </svg>
+                <span>{metadata.author}</span>
+              </div>
 
-          {/* Right column: Chat */}
-          <div className="h-[calc(100vh-10rem)] sticky top-8">
-            <ChatWindow bookId={id} bookSources={sources} />
+              {/* Genre + rating */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14 }}>
+                {metadata.genre.length > 0 && (
+                  <span style={{ fontSize: 12, color: '#8B7355', background: '#F5EDE4', padding: '4px 12px', borderRadius: 20, fontWeight: 500, letterSpacing: '0.02em' }}>
+                    {metadata.genre[0]}
+                  </span>
+                )}
+                {metadata.goodreadsRating && (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 13 }}>
+                    <span style={{ color: '#C4974A' }}>★</span>
+                    <span style={{ fontWeight: 500, color: '#6B5D4D' }}>{metadata.goodreadsRating}</span>
+                    <span style={{ color: '#B0A08A', fontSize: 12 }}>/ 5</span>
+                  </div>
+                )}
+              </div>
+
+              {/* Synopsis */}
+              {metadata.synopsis && (
+                <p style={{ fontSize: 14, lineHeight: 1.65, color: '#5A4F40', marginBottom: 10 }}>
+                  {metadata.synopsis.slice(0, 400)}
+                  {metadata.synopsis.length > 400 ? '...' : ''}
+                </p>
+              )}
+
+              {/* Page count + ratings */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 16, fontSize: 12, color: '#B0A08A' }}>
+                {metadata.pageCount > 0 && (
+                  <span style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                      <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
+                      <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
+                    </svg>
+                    {metadata.pageCount} pages
+                  </span>
+                )}
+                {metadata.ratingsCount && (
+                  <span>{metadata.ratingsCount.toLocaleString()} ratings</span>
+                )}
+              </div>
+            </div>
           </div>
         </div>
+
+        {/* How This Book Is Read — full-bleed via negative margin */}
+        <InterpretiveLandscape landscape={interpretiveLandscape} />
+
+        {/* Sources bar */}
+        <div style={{ padding: '16px 0', borderBottom: '1px solid #EDE6DB' }}>
+          <SourceBadges sources={sources} variant="bar" />
+        </div>
+
+        {/* Chat */}
+        <ChatWindow
+          bookId={id}
+          bookSources={sources}
+          bookTitle={metadata.title}
+          questionPrompts={questionPrompts ?? []}
+          chunkCount={chunkCount ?? 0}
+        />
       </div>
     </div>
   );

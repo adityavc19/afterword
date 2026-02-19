@@ -30,8 +30,10 @@ export interface BookKnowledge {
   metadata: BookMetadata;
   chunks: Chunk[];
   interpretiveLandscape: InterpretiveLandscape;
+  questionPrompts: string[];
+  chunkCount: number;
   ingestedAt: number;
-  sources: string[]; // List of successfully ingested source names
+  sources: string[];
 }
 
 export interface IngestionEvent {
