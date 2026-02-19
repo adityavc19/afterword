@@ -1,4 +1,5 @@
 import { BookMetadata, BookKnowledge, Chunk, IngestionEvent } from '@/types';
+import { enrichMetadata } from './metadata';
 import { scrapeGoodreads } from './scrapers/goodreads';
 import { scrapeReddit } from './scrapers/reddit';
 import { scrapeGuardian } from './scrapers/guardian';
@@ -7,18 +8,21 @@ import { generateLandscapeAndPrompts } from './claude';
 import { setKnowledge } from './store';
 
 export async function ingestBook(
-  metadata: BookMetadata,
+  partialMetadata: BookMetadata,
   onProgress: (event: IngestionEvent) => void
 ): Promise<BookKnowledge> {
+  // Step 1: Enrich metadata (fetch full details from Open Library + Google Books)
+  onProgress({ step: 'Fetching book details', status: 'loading' });
+  const metadata = await enrichMetadata(partialMetadata);
+  onProgress({ step: 'Fetching book details', status: 'done' });
+
   const title = metadata.title;
   const author = metadata.author;
   const allChunks: Chunk[] = [];
   const successfulSources: string[] = [];
   let ambientQuote: string | undefined;
 
-  onProgress({ step: 'Fetching book details', status: 'done' });
-
-  // Run all scrapers in parallel
+  // Step 2: Run all scrapers in parallel
   onProgress({ step: 'Reading Goodreads reviews', status: 'loading' });
   onProgress({ step: 'Scanning Reddit discussions', status: 'loading' });
   onProgress({ step: 'Loading critical reviews', status: 'loading' });
@@ -33,7 +37,6 @@ export async function ingestBook(
   if (goodreadsChunks.length > 0) {
     allChunks.push(...goodreadsChunks);
     successfulSources.push('Goodreads');
-    // Pick an ambient quote from the first reader review
     const firstReview = goodreadsChunks.find(c => c.type === 'reader_review');
     if (firstReview) {
       ambientQuote = firstReview.content.slice(0, 200).trim();
@@ -47,8 +50,7 @@ export async function ingestBook(
     allChunks.push(...redditChunks);
     successfulSources.push('Reddit');
     if (!ambientQuote) {
-      const firstDiscussion = redditChunks[0];
-      ambientQuote = firstDiscussion.content.slice(0, 200).trim();
+      ambientQuote = redditChunks[0].content.slice(0, 200).trim();
     }
     onProgress({ step: 'Scanning Reddit discussions', status: 'done' });
   } else {
@@ -68,10 +70,11 @@ export async function ingestBook(
     successfulSources.push('Literary Hub');
   }
 
+  // Step 3: Generate interpretive landscape + question prompts
   onProgress({ step: 'Building knowledge base', status: 'loading' });
-
-  // Generate interpretive landscape + question prompts
   const { landscape: interpretiveLandscape, questionPrompts } = await generateLandscapeAndPrompts(metadata, allChunks);
+
+  console.log(`[Ingest] "${title}" — ${allChunks.length} chunks, ${successfulSources.length} sources, ${questionPrompts.length} prompts`);
 
   const knowledge: BookKnowledge = {
     metadata,

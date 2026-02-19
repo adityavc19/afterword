@@ -12,6 +12,13 @@ interface Props {
   chunkCount: number;
 }
 
+const FALLBACK_PROMPTS = [
+  'What stayed with you after finishing?',
+  'Which character felt most real to you?',
+  'Was there a moment that changed how you read the rest?',
+  'Would you recommend this to a friend? Why or why not?',
+];
+
 export default function ChatWindow({ bookId, bookSources, bookTitle, questionPrompts, chunkCount }: Props) {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState('');
@@ -19,8 +26,13 @@ export default function ChatWindow({ bookId, bookSources, bookTitle, questionPro
   const [userHasSent, setUserHasSent] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
+  // Use generated prompts if available, otherwise fall back to generic ones
+  const displayPrompts = questionPrompts.length > 0 ? questionPrompts : FALLBACK_PROMPTS;
+
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    if (messages.length > 0) {
+      messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    }
   }, [messages, streaming]);
 
   async function sendMessage(text?: string) {
@@ -127,9 +139,9 @@ export default function ChatWindow({ bookId, bookSources, bookTitle, questionPro
             </p>
 
             {/* Question prompt grid */}
-            {questionPrompts.length > 0 && (
+            {displayPrompts.length > 0 && (
               <div className="grid grid-cols-2 gap-[10px] mb-2">
-                {questionPrompts.map((q, i) => (
+                {displayPrompts.map((q, i) => (
                   <button
                     key={i}
                     onClick={() => sendMessage(q)}
@@ -144,7 +156,7 @@ export default function ChatWindow({ bookId, bookSources, bookTitle, questionPro
                       color: '#3D3428',
                       lineHeight: 1.45,
                       cursor: 'pointer',
-                      gridColumn: i === questionPrompts.length - 1 && questionPrompts.length % 2 !== 0 ? '1 / -1' : 'auto',
+                      gridColumn: i === displayPrompts.length - 1 && displayPrompts.length % 2 !== 0 ? '1 / -1' : 'auto',
                     }}
                     onMouseEnter={e => {
                       (e.currentTarget as HTMLElement).style.background = '#F5EDE4';

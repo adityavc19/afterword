@@ -6,7 +6,7 @@ function generateId(): string {
 }
 
 function chunkText(text: string, source: string, sourceUrl: string, type: Chunk['type'], rating?: number): Chunk[] {
-  const TARGET_CHARS = 1600; // ~400 tokens
+  const TARGET_CHARS = 1600;
   const chunks: Chunk[] = [];
 
   if (text.length <= TARGET_CHARS) {
@@ -14,7 +14,6 @@ function chunkText(text: string, source: string, sourceUrl: string, type: Chunk[
     return chunks;
   }
 
-  // Split by sentences
   const sentences = text.split(/(?<=[.!?])\s+/);
   let current = '';
   for (const sentence of sentences) {
@@ -37,46 +36,105 @@ export async function scrapeGoodreads(title: string, author: string): Promise<Ch
     browser = await chromium.launch({ headless: true });
     const context = await browser.newContext({
       userAgent:
-        'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
       locale: 'en-US',
+      viewport: { width: 1280, height: 800 },
     });
     const page = await context.newPage();
 
+    // Block images/fonts to speed up loading
+    await page.route('**/*.{png,jpg,jpeg,gif,svg,woff,woff2}', route => route.abort());
+
     // Search for the book
     const searchUrl = `https://www.goodreads.com/search?q=${encodeURIComponent(title + ' ' + author)}`;
-    await page.goto(searchUrl, { waitUntil: 'domcontentloaded', timeout: 20000 });
+    console.log(`[Goodreads] Searching: ${searchUrl}`);
+    await page.goto(searchUrl, { waitUntil: 'domcontentloaded', timeout: 25000 });
 
-    // Try to find and click the first result
-    const firstResult = page.locator('a.bookTitle').first();
-    const bookUrl = await firstResult.getAttribute('href').catch(() => null);
+    // Wait a moment for JS rendering
+    await page.waitForTimeout(2000);
+
+    // Try multiple selectors for the first result (Goodreads changes their UI)
+    let bookUrl: string | null = null;
+    const selectors = ['a.bookTitle', 'a[href*="/book/show/"]', '.bookTitle a', 'table.tableList a[href*="/book/show/"]'];
+    for (const sel of selectors) {
+      const el = page.locator(sel).first();
+      bookUrl = await el.getAttribute('href').catch(() => null);
+      if (bookUrl) break;
+    }
+
     if (!bookUrl) {
       console.log('[Goodreads] No book found in search results');
+      await browser.close();
       return [];
     }
 
-    const fullBookUrl = `https://www.goodreads.com${bookUrl}`;
-    await page.goto(fullBookUrl, { waitUntil: 'domcontentloaded', timeout: 20000 });
-
-    // Wait for reviews to appear
-    await page.waitForSelector('[data-testid="review"]', { timeout: 8000 }).catch(() => null);
+    const fullBookUrl = bookUrl.startsWith('http') ? bookUrl : `https://www.goodreads.com${bookUrl}`;
+    console.log(`[Goodreads] Found book: ${fullBookUrl}`);
+    await page.goto(fullBookUrl, { waitUntil: 'domcontentloaded', timeout: 25000 });
+    await page.waitForTimeout(3000);
 
     const chunks: Chunk[] = [];
 
-    // Scrape reviews with diverse ratings
-    const reviewEls = await page.locator('[data-testid="review"]').all();
+    // Try multiple review selector strategies
+    const reviewSelectors = [
+      '[data-testid="review"]',
+      '.ReviewCard',
+      'article.ReviewCard',
+      '[itemprop="reviews"]',
+      '.review',
+    ];
+
+    let reviewEls: Awaited<ReturnType<typeof page.locator>>[] = [];
+    for (const sel of reviewSelectors) {
+      reviewEls = await page.locator(sel).all();
+      if (reviewEls.length > 0) {
+        console.log(`[Goodreads] Found ${reviewEls.length} reviews with selector: ${sel}`);
+        break;
+      }
+    }
+
+    // Extract review text with multiple content selectors
+    const contentSelectors = [
+      '[data-testid="contentContainer"]',
+      '.ReviewText__content',
+      '.ReviewCard__text',
+      '.readable span[style*="display"]',
+      'span.readable',
+    ];
+
     for (const reviewEl of reviewEls.slice(0, 12)) {
       try {
-        const text = await reviewEl.locator('[data-testid="contentContainer"]').textContent({ timeout: 2000 });
-        const ratingEl = await reviewEl.locator('[data-testid="review-star-rating"]').textContent({ timeout: 2000 }).catch(() => '');
-        const ratingMatch = ratingEl?.match(/(\d)/);
-        const rating = ratingMatch ? parseInt(ratingMatch[1]) : undefined;
+        let text = '';
+        for (const cSel of contentSelectors) {
+          text = await reviewEl.locator(cSel).first().textContent({ timeout: 2000 }).catch(() => '') ?? '';
+          if (text.trim().length > 50) break;
+        }
 
-        if (text && text.trim().length > 100) {
-          const reviewChunks = chunkText(text.trim(), 'Goodreads', fullBookUrl, 'reader_review', rating);
-          chunks.push(...reviewChunks);
+        // Try to get star rating
+        let rating: number | undefined;
+        const ratingText = await reviewEl.locator('[aria-label*="star"], [data-testid*="rating"], .RatingStars').first()
+          .getAttribute('aria-label').catch(() => null);
+        if (ratingText) {
+          const match = ratingText.match(/(\d)/);
+          if (match) rating = parseInt(match[1]);
+        }
+
+        if (text.trim().length > 100) {
+          chunks.push(...chunkText(text.trim(), 'Goodreads', fullBookUrl, 'reader_review', rating));
         }
       } catch {
         // Skip individual review errors
+      }
+    }
+
+    // If no reviews found via structured selectors, try a raw text extraction
+    if (chunks.length === 0) {
+      console.log('[Goodreads] No structured reviews found, trying raw text extraction...');
+      const bodyText = await page.locator('.BookPage__mainContent, main').textContent({ timeout: 5000 }).catch(() => '');
+      if (bodyText && bodyText.length > 500) {
+        // Extract a summary of what's on the page
+        const cleaned = bodyText.replace(/\s+/g, ' ').trim().slice(0, 3000);
+        chunks.push(...chunkText(`[Goodreads page content for ${title}]\n${cleaned}`, 'Goodreads', fullBookUrl, 'reader_review'));
       }
     }
 
