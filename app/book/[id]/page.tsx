@@ -23,14 +23,17 @@ export default async function BookPage({ params }: Props) {
   const authorLastName = metadata.author.split(' ').pop()?.toUpperCase() ?? '';
 
   return (
-    <div className="min-h-screen flex flex-col animate-fade-up" style={{ background: '#FDFAF6' }}>
-      {/* Top bar */}
+    <div style={{ height: '100vh', display: 'flex', flexDirection: 'column', background: '#FDFAF6' }}>
+      {/* Nav bar */}
       <div
-        className="flex items-center gap-4 sticky top-0 z-10"
         style={{
-          padding: '12px 24px',
+          display: 'flex',
+          alignItems: 'center',
+          gap: 16,
+          padding: '10px 24px',
           borderBottom: '1px solid #EDE6DB',
           background: '#FDFAF6',
+          flexShrink: 0,
         }}
       >
         <Link
@@ -51,116 +54,143 @@ export default async function BookPage({ params }: Props) {
         <SearchBar variant="detail" />
       </div>
 
-      {/* Two-column layout */}
-      <div className="flex-1 flex" style={{ maxWidth: 1120, margin: '0 auto', padding: '0 24px', width: '100%' }}>
+      {/* Main content: sidebar + chat */}
+      <div style={{ flex: 1, display: 'flex', overflow: 'hidden' }}>
 
-        {/* Left column: Book metadata only */}
-        <div style={{ width: 300, flexShrink: 0, padding: '32px 24px 32px 0', borderRight: '1px solid #EDE6DB' }}>
+        {/* Left sidebar — sticky, scrollable */}
+        <div
+          className="chat-scroll"
+          style={{
+            width: 280,
+            flexShrink: 0,
+            overflowY: 'auto',
+            padding: '24px 20px',
+            borderRight: '1px solid #EDE6DB',
+          }}
+        >
           {/* Cover */}
-          <div style={{ marginBottom: 20 }}>
+          <div style={{ marginBottom: 16 }}>
             {metadata.cover ? (
               <div
                 className="overflow-hidden"
                 style={{
-                  width: 110,
-                  height: 165,
+                  width: 100,
+                  height: 150,
                   borderRadius: 4,
                   border: '1px solid #E0D6CA',
                   boxShadow: '0 4px 16px rgba(0,0,0,0.08)',
                 }}
               >
-                <Image src={metadata.cover} alt={metadata.title} width={110} height={165} className="w-full h-full object-cover" unoptimized />
+                <Image src={metadata.cover} alt={metadata.title} width={100} height={150} className="w-full h-full object-cover" unoptimized />
               </div>
             ) : (
               <div
                 className="flex flex-col items-center justify-center"
                 style={{
-                  width: 110,
-                  height: 165,
+                  width: 100,
+                  height: 150,
                   borderRadius: 4,
                   background: 'linear-gradient(145deg, #3D3428 0%, #2A2318 100%)',
                   border: '1px solid #E0D6CA',
-                  padding: 14,
+                  padding: 12,
                   boxShadow: '0 4px 16px rgba(0,0,0,0.08)',
                 }}
               >
-                <div style={{ fontFamily: 'var(--font-instrument-serif), serif', fontSize: 13, textAlign: 'center', lineHeight: 1.3, color: '#E8D5C4' }}>
+                <div style={{ fontFamily: 'var(--font-instrument-serif), serif', fontSize: 12, textAlign: 'center', lineHeight: 1.3, color: '#E8D5C4' }}>
                   {metadata.title}
                 </div>
-                <div style={{ fontSize: 9, color: '#8B7355', marginTop: 8, letterSpacing: '0.05em' }}>
+                <div style={{ fontSize: 8, color: '#8B7355', marginTop: 6, letterSpacing: '0.05em' }}>
                   {authorLastName}
                 </div>
               </div>
             )}
           </div>
 
-          {/* Title + Year */}
-          <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, marginBottom: 6 }}>
-            <h1 style={{ fontFamily: 'var(--font-instrument-serif), serif', fontSize: 24, fontWeight: 400, lineHeight: 1.2 }}>
-              {metadata.title}
-            </h1>
+          {/* Title */}
+          <h1 style={{ fontFamily: 'var(--font-instrument-serif), serif', fontSize: 20, fontWeight: 400, lineHeight: 1.2, marginBottom: 4 }}>
+            {metadata.title}
+          </h1>
+
+          {/* Author + year */}
+          <div style={{ fontSize: 13, color: '#6B5D4D', marginBottom: 10 }}>
+            {metadata.author}
             {metadata.year > 0 && (
-              <span style={{ fontSize: 13, color: '#B0A08A', fontFamily: 'var(--font-jetbrains-mono), monospace', flexShrink: 0 }}>
+              <span style={{ color: '#B0A08A', marginLeft: 6, fontFamily: 'var(--font-jetbrains-mono), monospace', fontSize: 12 }}>
                 {metadata.year}
               </span>
             )}
           </div>
 
-          {/* Author */}
-          <div style={{ fontSize: 14, color: '#6B5D4D', marginBottom: 12, display: 'flex', alignItems: 'center', gap: 6 }}>
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#B0A08A" strokeWidth="2" strokeLinecap="round">
-              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
-              <circle cx="12" cy="7" r="4" />
-            </svg>
-            <span>{metadata.author}</span>
-          </div>
-
-          {/* Genre + rating */}
+          {/* Quick stats row */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14, flexWrap: 'wrap' }}>
+            {metadata.goodreadsRating && (
+              <span style={{ display: 'flex', alignItems: 'center', gap: 3, fontSize: 12 }}>
+                <span style={{ color: '#C4974A' }}>★</span>
+                <span style={{ fontWeight: 500, color: '#6B5D4D' }}>{metadata.goodreadsRating}</span>
+              </span>
+            )}
             {metadata.genre.length > 0 && (
-              <span style={{ fontSize: 11, color: '#8B7355', background: '#F5EDE4', padding: '3px 10px', borderRadius: 20, fontWeight: 500 }}>
+              <span style={{ fontSize: 10, color: '#8B7355', background: '#F5EDE4', padding: '2px 8px', borderRadius: 12, fontWeight: 500 }}>
                 {metadata.genre[0]}
               </span>
             )}
-            {metadata.goodreadsRating && (
-              <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 12 }}>
-                <span style={{ color: '#C4974A' }}>★</span>
-                <span style={{ fontWeight: 500, color: '#6B5D4D' }}>{metadata.goodreadsRating}</span>
-                <span style={{ color: '#B0A08A', fontSize: 11 }}>/ 5</span>
-              </div>
-            )}
             {metadata.pageCount > 0 && (
-              <span style={{ fontSize: 11, color: '#B0A08A' }}>{metadata.pageCount} pages</span>
+              <span style={{ fontSize: 11, color: '#B0A08A' }}>{metadata.pageCount}p</span>
             )}
           </div>
 
           {/* Synopsis */}
           {metadata.synopsis && (
-            <p style={{ fontSize: 13, lineHeight: 1.6, color: '#5A4F40', marginBottom: 16 }}>
-              {metadata.synopsis.slice(0, 300)}
-              {metadata.synopsis.length > 300 ? '...' : ''}
+            <p style={{ fontSize: 12, lineHeight: 1.55, color: '#5A4F40', marginBottom: 14 }}>
+              {metadata.synopsis.slice(0, 250)}
+              {metadata.synopsis.length > 250 ? '...' : ''}
             </p>
           )}
 
-          {/* Ratings count */}
-          {metadata.ratingsCount && (
-            <div style={{ fontSize: 11, color: '#B0A08A', marginBottom: 20 }}>
-              {metadata.ratingsCount.toLocaleString()} ratings
+          {/* Divider */}
+          <div style={{ borderTop: '1px solid #EDE6DB', margin: '4px 0 14px' }} />
+
+          {/* How This Book Is Read — collapsible */}
+          <details>
+            <summary
+              style={{
+                cursor: 'pointer',
+                fontFamily: 'var(--font-instrument-serif), serif',
+                fontSize: 11,
+                fontWeight: 400,
+                letterSpacing: '0.12em',
+                textTransform: 'uppercase',
+                color: '#8B7355',
+                marginBottom: 12,
+                listStyle: 'none',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 6,
+              }}
+            >
+              <span style={{ fontSize: 9, transition: 'transform 0.2s' }}>▸</span>
+              How This Book Is Read
+            </summary>
+            <div style={{ marginTop: 10 }}>
+              <InterpretiveLandscape landscape={interpretiveLandscape} />
             </div>
-          )}
+          </details>
+
+          {/* Divider */}
+          <div style={{ borderTop: '1px solid #EDE6DB', margin: '14px 0' }} />
 
           {/* Sources */}
-          <div style={{ borderTop: '1px solid #EDE6DB', paddingTop: 14 }}>
-            <SourceBadges sources={sources} variant="bar" />
-          </div>
+          <SourceBadges sources={sources} variant="bar" />
+
+          {metadata.ratingsCount && (
+            <div style={{ fontSize: 10, color: '#B0A08A', marginTop: 10 }}>
+              {metadata.ratingsCount.toLocaleString()} ratings on Open Library
+            </div>
+          )}
         </div>
 
-        {/* Right column: Landscape + Chat */}
-        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0, padding: '0 0 0 24px' }}>
-          {/* How This Book Is Read */}
-          <InterpretiveLandscape landscape={interpretiveLandscape} />
-
-          {/* Chat */}
+        {/* Right column — full-height chat */}
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0 }}>
           <ChatWindow
             bookId={id}
             bookSources={sources}
