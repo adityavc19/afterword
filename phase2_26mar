@@ -1,0 +1,354 @@
+# Afterword v2 — Product Requirements Document
+
+**Aurora Labs**
+**Last Updated:** March 2026
+**Status:** Pre-build
+
+---
+
+## The Problem
+
+You finish a book. You log it on Goodreads. You skim some reviews. You intend to write your own review — you never do. The blank text box is a wall. You don't know where to start, the moment passes, and whatever the book meant to you evaporates into "yeah, it was good."
+
+Afterword v1 tried to solve this with a conversation partner. It didn't work — the founder doesn't use it. The format was wrong. You don't want a chat after finishing a book. You want to be drawn out.
+
+---
+
+## The Insight
+
+The gap between "I have thoughts about this book" and "I can articulate those thoughts" — that gap is the product.
+
+People don't need a conversation partner. They need a set of sharp, book-specific questions that force them to take a position. The review you never write isn't a motivation problem. It's a prompt problem.
+
+---
+
+## One-Liner
+
+**A personal reading shelf where every book carries your take, drawn out by prompts that actually know the book.**
+
+---
+
+## Core Loop
+
+```
+Finish a book
+    → Search & log it on Afterword
+        → 3 book-specific prompts force a position
+            → Responses distilled into a shareable card
+                → Card lives on your shelf
+                    → Share externally if you want
+```
+
+---
+
+## What Afterword Replaces
+
+The Goodreads review you never write.
+
+## What Afterword Does NOT Replace
+
+Goodreads logging, book discovery, reading lists, social graph. Afterword is not competing with Goodreads on breadth. It's competing on depth — specifically, the depth of your own thinking about what you read.
+
+---
+
+## Target User (Day One)
+
+The founder. One user. The product must be useful to a single person with no social features, no community, no feed. If it doesn't pass the "would I open this after finishing a book" test, it's wrong.
+
+Broader profile: someone who reads regularly, has opinions about what they read, but never articulates them. They log on Goodreads but the review box stays empty. They'll text a friend about a book but won't write a public take. The friction isn't laziness — it's the blank page.
+
+---
+
+## Product Pillars
+
+### 1. The Shelf (Trophy Case)
+
+A visually beautiful home for your reading life. Inspired by Stripe Press — books treated as objects of intellectual weight, not items in a database.
+
+**Key characteristics:**
+- Cover-forward grid layout, generous whitespace
+- Each book displays: cover, title, author, your rating, read date
+- Books with completed takes show the card; books without show a prompt to add one
+- The shelf should feel like something you want to look at — a gallery, not a spreadsheet
+- Aesthetic reference: Stripe Press, Criterion Collection spines
+
+**What the shelf is NOT:**
+- A reading tracker with progress bars
+- A social profile
+- A recommendation engine
+
+### 2. The Prompt Engine (The Soul)
+
+Three book-specific prompts that force a position. This is the core differentiator. Generic prompts ("what did you think?") produce generic takes. Book-specific prompts that know the debates, tensions, and fault lines of a particular book produce takes worth sharing.
+
+**Prompt Structure — 3 steps:**
+
+| Step | Type | Purpose | Example (Never Let Me Go) |
+|------|------|---------|---------------------------|
+| 1. Commit | Forced binary / spectrum | Pick a side. Zero friction, no typing. Lowers activation energy. | "Is Kathy in genuine denial about her fate, or does she understand everything?" |
+| 2. Elaborate | Open text, building on Step 1 | Explain your position. Easier because you've already committed to a lane. | "You said she understands. What makes you think so?" |
+| 3. Zoom Out | Open text, provocation | Connect the book to something bigger. Produces the most shareable take. | "Ishiguro says this isn't about clones — it's about how we all accept the terms we're given. Where do you do that?" |
+
+**Prompt Quality Standards:**
+
+- Every prompt must be impossible to answer with "it was good" or "I liked it"
+- Every prompt must contain an embedded tension — a position to push against
+- Prompts should reference real critical discourse, reader debates, author statements
+- Prompts should feel like they come from someone who has read the book AND read what people argue about regarding the book
+
+**Prompt Generation (Technical):**
+
+- LLM layer generates 3 prompts per book
+- Input: book title + author → LLM uses its training knowledge of the book's themes, controversies, critical reception, and reader debates
+- For well-known books: high-quality prompts from extensive discourse knowledge
+- For obscure books: infer tensions from themes, genre conventions, and whatever is known
+- Prompts are generated once per book and cached (not regenerated per user in MVP)
+
+**More Examples:**
+
+**Boom — Hobart & Huber**
+1. COMMIT: "Is AI more like the railroad bubble (transformative infrastructure) or the dot-com bubble (real but overhyped timing)?"
+2. ELABORATE: [builds on choice]
+3. ZOOM OUT: "Does this book make you more sympathetic to irrational founders, or does it just give recklessness a better narrative?"
+
+**Sapiens — Harari**
+1. COMMIT: "Is the agricultural revolution actually 'history's biggest fraud' or is Harari being deliberately provocative?"
+2. ELABORATE: [builds on choice]
+3. ZOOM OUT: "After reading this, do you trust large-scale human cooperation more or less?"
+
+### 3. The Card (Shareable Artifact)
+
+A compact, designed card that packages your take. Lives on your shelf, shareable externally.
+
+**Card anatomy:**
+- Book cover (thumbnail)
+- Title + Author + Year
+- Your rating
+- Your distilled take (synthesized from 3 prompt responses)
+- Genre/topic tags
+- Read date
+- Afterword branding (subtle watermark)
+
+**Card design principles:**
+- Color header band pulled from book's dominant palette
+- Typographic, editorial feel — not gamified, not social-media-native
+- Should look like something from Criterion Collection or Stripe Press, not Instagram
+- Must work as: a shelf tile, a full-screen modal, a shareable image
+
+**Take synthesis:**
+
+The card text is derived from the user's three responses. Two approaches (to be tested):
+
+- **Option A — Direct quote:** Pull the strongest line from the user's responses verbatim. Raw, authentic, but might feel unpolished.
+- **Option B — LLM synthesis:** AI reads all three responses and distills them into a 1-3 sentence take that captures the user's position in tighter language. More polished, but risks feeling less like "mine."
+
+Recommendation: Start with Option A (direct pull from user's strongest response). Offer Option B as "polish my take" — opt-in, not default.
+
+### 4. External Sharing (Growth Vector)
+
+The card is the growth mechanism. Not a feed, not virality mechanics — just a well-designed artifact that people want to share because it looks good and says something interesting.
+
+**Share targets:**
+- Copy image (for WhatsApp, iMessage, Instagram stories)
+- Copy link (for Twitter, LinkedIn)
+- Download as image
+
+**The loop:**
+Someone sees your card → "What app made this?" → They visit Afterword → They finish their next book and make their own card → They share it
+
+This is the only growth mechanism in the MVP. No referral codes, no invite systems, no social features.
+
+---
+
+## User Flows
+
+### Flow 1: Log a New Book
+
+```
+Shelf screen
+    → Tap "Log a book"
+        → Search by title or author
+            → Select book (pulls cover, metadata from book API)
+                → Rate it (stars or equivalent)
+                    → Enter Quick Take flow (3 prompts)
+                        → Card generated
+                            → Card appears on shelf
+```
+
+### Flow 2: View Your Shelf
+
+```
+Open Afterword
+    → See your shelf (all logged books with cards)
+        → Tap any book
+            → See full card (your take, rating, metadata)
+                → Option to share
+                → Option to "Go Deeper" (future: additional prompts)
+```
+
+### Flow 3: Share a Card
+
+```
+Viewing a card
+    → Tap "Share"
+        → Copy as image / Copy link / Download
+            → Share to WhatsApp, Twitter, Instagram, etc.
+```
+
+---
+
+## What We Are NOT Building (MVP)
+
+| Feature | Why Not |
+|---------|---------|
+| Social feed | Cold start problem. Empty rooms kill products. |
+| Comments / replies | No users to comment. Cards travel on existing networks. |
+| Book recommendations | Not the job. Goodreads, friends, and bookstores do this. |
+| Reading progress tracking | Not the job. This is post-book, not during-book. |
+| Goodreads import | Nice-to-have, not essential. Manual logging is fine for MVP. |
+| Discussion forum | Future layer, only once enough cards exist per book. |
+| "Your take vs. consensus" | Future layer. Requires aggregated data from multiple users. |
+| Go Deeper (extended prompts) | Future layer. Start with 3, prove the core loop works. |
+
+---
+
+## Future Layers (Post-MVP, Sequenced)
+
+**Layer 2 — Mirrors (Discovery)**
+Surface the most interesting takes from across the internet (Goodreads, Reddit, literary criticism) alongside the user's take. "Here's what you thought. Here's what the internet thought. Here's where you diverge." Does not require Afterword's own community.
+
+**Layer 3 — Discourse (Social)**
+Once enough cards exist for the same books, aggregate them. "47 people have a take on Never Let Me Go. Here's where they disagree." The feed emerges from card density, not from forcing users to scroll a timeline.
+
+**Layer 4 — Take vs. Consensus**
+The card doesn't just show the user's take — it shows the user's take *against* the prevailing opinion. The artifact carries built-in tension, which drives discourse.
+
+---
+
+## Technical Architecture (High-Level)
+
+### Stack
+- **Frontend:** React / TypeScript / Tailwind / Framer Motion
+- **Backend:** Supabase (auth, database, storage)
+- **Deployment:** Vercel
+- **Book Data:** Open Library API or Google Books API (covers, metadata)
+- **Prompt Generation:** Anthropic API (Claude) — generates book-specific prompts
+- **Card Generation:** Client-side rendering → export as image for sharing
+
+### Data Model (Core)
+
+```
+User
+  ├── id
+  ├── name
+  └── created_at
+
+Book (cached from API)
+  ├── id
+  ├── title
+  ├── author
+  ├── year
+  ├── cover_url
+  ├── isbn
+  └── cached_prompts (JSON — 3 prompts, generated once)
+
+UserBook (the shelf entry)
+  ├── user_id
+  ├── book_id
+  ├── rating
+  ├── read_date
+  ├── responses (JSON — answers to 3 prompts)
+  ├── distilled_take (text — the card's main text)
+  ├── tags
+  └── created_at
+```
+
+### Prompt Generation Flow
+
+```
+User searches for a book
+    → Check if cached_prompts exist for this book
+        → If yes: use cached prompts
+        → If no: call Anthropic API with system prompt + book title/author
+            → Generate 3 prompts following the Commit → Elaborate → Zoom Out structure
+            → Cache prompts for future users
+            → Return to client
+```
+
+### System Prompt for Prompt Generation (Draft)
+
+```
+You are a literary provocateur. Given a book title and author, generate exactly 3 discussion prompts.
+
+Prompt 1 (COMMIT): A forced binary or spectrum question. The user must pick a side. Reference a specific tension, debate, or interpretive divide that exists around this book. Include enough context that the user doesn't need to remember the specific detail.
+
+Prompt 2 (ELABORATE): Will be dynamically generated based on the user's answer to Prompt 1. Format: "You said [X]. [Follow-up that pushes them to articulate why]."
+
+Prompt 3 (ZOOM OUT): Connect the book's core theme to something larger — the reader's own life, a broader cultural question, or a provocation about the author's intent. This should produce a take that would be interesting to someone who hasn't read the book.
+
+Rules:
+- Never ask "what did you think" or "how did it make you feel"
+- Every prompt must contain an embedded tension
+- Reference real critical discourse where possible
+- Be specific to THIS book — no generic literary questions
+- Keep prompts under 30 words each
+```
+
+---
+
+## Success Metrics
+
+**Primary (the only one that matters in MVP):**
+- Does the founder use it after finishing his next book? Yes/No.
+
+**Secondary:**
+- Time from "open app" to "card on shelf": target < 3 minutes
+- Card share rate: % of cards that get shared externally
+- Return rate: does the user come back for the next book?
+
+**Not tracking in MVP:**
+- DAU/MAU (meaningless with one user)
+- Social engagement (no social features)
+- Retention curves (too early)
+
+---
+
+## Open Questions
+
+1. **Rating system:** Stars (conventional, comparable) vs. something more opinionated ("press into someone's hands" / "mention casually" / "wouldn't bring it up")? Stars are lower friction but less differentiated.
+
+2. **Prompt 2 dynamic generation:** Prompt 2 needs to reference the user's answer to Prompt 1. This requires a real-time LLM call after the user answers Prompt 1 (not cacheable). Acceptable latency? Could show a brief loading state.
+
+3. **Take synthesis:** Direct quote from user's responses vs. LLM-polished synthesis? Start with direct quote, offer polish as opt-in.
+
+4. **Book data source:** Open Library (free, open, inconsistent covers) vs. Google Books API (better data, rate limits) vs. hybrid?
+
+5. **Card image export:** Client-side canvas rendering vs. server-side generation? Client-side is simpler for MVP.
+
+6. **Goodreads interop:** Should there be a "post to Goodreads" button? Low priority but could close the loop for users who still want their take there.
+
+---
+
+## Build Sequence
+
+**Phase 1 — Core Loop (MVP)**
+1. Book search + logging
+2. Prompt engine (generation + 3-step flow)
+3. Card generation + shelf display
+4. Share as image
+
+**Phase 2 — Polish**
+1. Shelf visual refinement
+2. Card design iteration
+3. "Go Deeper" extended prompts (opt-in)
+4. Goodreads import (backfill shelf)
+
+**Phase 3 — Social Layer**
+1. Public card pages (linkable)
+2. Book-level aggregation ("X takes on this book")
+3. "Your take vs. the consensus" card variant
+4. Feed / discovery
+
+---
+
+*This document captures the product as defined in conversation on March 26, 2026. It is a living document — update as decisions are made and assumptions are tested.*
